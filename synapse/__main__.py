@@ -35,6 +35,10 @@ def get(args, syn):
         shutil.copyfile(src, dst)
     return 0
 
+# Changed cat to use binary mode.
+# sys.stdout is opened in text mode, which is does bad things to binary files.
+# The following version seems to work on Unix OS's (specifically for RData files).
+# Probably, needs more testing. -jcb
 def cat(args, syn):
     """
     
@@ -42,10 +46,15 @@ def cat(args, syn):
     - `args`:
     """
     ent = syn.downloadEntity(args.id)
-    for f in ent['files']:
-        with open(os.path.join(ent['cacheDir'], f)) as fp:
-            for l in fp:
-                sys.stdout.write(l)
+    for filename in ent.get('files', []):
+        with open(os.path.join(ent['cacheDir'], filename), "rb") as f, open("/dev/stdout", "wb") as out:
+            while True:
+                chunk = f.read(8192)
+                if chunk:
+                    out.write(chunk)
+                else:
+                    break
+
 
 
 def delete(args, syn):
@@ -100,7 +109,7 @@ if __name__ == '__main__':
     
     parser_query = subparsers.add_parser('query', help='Performs SQL like queries on Synapse')
     parser_query.add_argument('queryString', metavar='string', type=str, nargs='*',
-                         help='A query string, see http://... for more information')
+                         help='A query string, see https://sagebionetworks.jira.com/wiki/display/PLFM/Repository+Service+API#RepositoryServiceAPI-QueryAPI for more information')
     parser_query.set_defaults(func=query)
 
     parser_get = subparsers.add_parser('get', help='downloads a dataset from Synapse')
