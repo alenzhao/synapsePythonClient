@@ -9,15 +9,13 @@ import ConfigParser
 from nose.tools import *
 import tempfile
 import os
+import ConfigParser
 
 
 PROJECT_JSON={ u'entityType': u'org.sagebionetworks.repo.model.Project', u'name': ''}
 DATA_JSON={ u'entityType': u'org.sagebionetworks.repo.model.Data', u'parentId': ''}
 CODE_JSON={ u'entityType': u'org.sagebionetworks.repo.model.Code', u'parentId': ''}
 
-
-def test_b():
-    assert 'b' == 'b'
 
 class TestClient:
     """
@@ -51,18 +49,6 @@ class TestClient:
         self.toRemove.append(entity)
         return entity
 
-    def test__connect(self):
-        import httplib
-        #Test https protocol
-        self.syn.repoEndpoint['protocol']='https'
-        conn = self.syn._connect(self.syn.repoEndpoint)
-        assert isinstance(conn, httplib.HTTPSConnection)
-
-        #Test http protocol
-        self.syn.repoEndpoint['protocol']='http'
-        conn = self.syn._connect(self.syn.repoEndpoint)
-        assert isinstance(conn, httplib.HTTPConnection)
-
 
     def test_printEntity(self):
         self.syn.printEntity({'hello':'world', 'alist':[1,2,3,4]}) 
@@ -77,7 +63,6 @@ class TestClient:
         self.syn.login()
 
         #Test that it works with username and password
-        import ConfigParser
         config = ConfigParser.ConfigParser()
         config.read(client.CONFIG_FILE)
         self.syn.login(config.get('authentication', 'username'), config.get('authentication', 'password'))
