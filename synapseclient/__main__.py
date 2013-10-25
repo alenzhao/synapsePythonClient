@@ -235,6 +235,18 @@ def login(args, syn):
     syn.login(args.synapseUser, args.synapsePassword, rememberMe=args.rememberMe)
 
 
+def new(args, syn):
+    """Create a new project from scaffolding"""
+    from synapseclient.scaffold import Scaffold
+    scaffold = Scaffold(syn)
+    if args.scaffold == 'data analysis':
+        scaffold.data_analysis(name=args.name, team=args.team)
+    elif args.scaffold == 'challenge':
+        scaffold.challenge(name=args.name)
+    else:
+        raise ValueError('Unrecognized scaffold "%s".' % args.scaffold)
+
+
 def build_parser():
     """Builds the argument parser and returns the result."""
     
@@ -531,6 +543,25 @@ def build_parser():
             default=False,
             help='Cache credentials for automatic authentication on future interactions with Synapse')
     parser_login.set_defaults(func=login)
+
+
+    parser_new = subparsers.add_parser(
+            'new',
+            help='Create a new Synapse project from scaffolding')
+    parser_new.add_argument(
+            '-n', '--name',
+            metavar='NAME', type=str, required=True,
+            help='Name of project.')
+    parser_new.add_argument(
+            '--scaffold',
+            metavar='SCAFFOLD', type=str, required=True,
+            help='One of {data analysis, challenge, ...etc...?}')
+    parser_new.add_argument(
+            '-t', '--team',
+            metavar='TEAM', type=str, nargs='*',
+            help='List of names or emails of team members')
+
+    parser_new.set_defaults(func=new)
 
 
     return parser
