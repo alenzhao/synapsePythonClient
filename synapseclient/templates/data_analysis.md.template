@@ -1,0 +1,52 @@
+#{name}
+
+This is a template for a data analysis project. Now, add an overview and a bit of background to help readers understand the goals and methods of the project.
+
+${{image?synapseId=syn2280523&align=None&scale=100}}
+
+To run the code examples below, first import from the synapseclient library and [connect to Synapse](#!Synapse:syn1768504/wiki/56068):
+
+```python
+from synapseclient import Synapse, Project, Folder, File, Activity
+syn = Synapse()
+syn.login()
+```
+
+##Data
+Describe the structure and limitations of the data.
+
+[Add data](#!Synapse:syn1768504/wiki/56098) to your project:
+
+```python
+data_entity = syn.store(File('data/file.xyz', parent='{data_syn_id}'))
+```
+
+##Methods
+Analysis workflow, techniques and source code.
+
+Add source code, for example a link to a [GitHub](https://github.com/) project:
+
+```python
+url = 'https://github.com/ima_scientist/{name_slug}/commit/eacd822313c8ff99ac2406815463676b6c9f5fc4'
+code_entity = syn.store(File(url, name='DataNinjaMethod', parent='{code_syn_id}'))
+```
+
+Note that the URL above refers to a specific commit for better reproducibility.
+
+##Results
+Findings and figures.
+
+Add a figure with provenance.
+
+```python
+activity = Activity(name='DataNinjaMethod', used=data_entity, executed=code_entity)
+figure_entity = syn.store(File('figures/figure1.pdf', parent='{figures_syn_id}'), activity=activity)
+```
+
+For more on creating reproducible data analyses using activities, see: [Building up provenance relationships](#!Synapse:syn1768504/wiki/56099).
+
+##Team
+{team}
+
+##Links
+To publications, organization, data providers, funders, etc.

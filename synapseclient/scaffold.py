@@ -4,109 +4,127 @@ Scaffolding for Synapse Projects
 ********************************
 
 """
+import pkg_resources
+import re
+
+
 from synapseclient import Project, Folder, File, Wiki
 from synapseclient.utils import _to_list
-from collections import namedtuple
+from synapseclient.exceptions import SynapseHTTPError
 
 
-Contributor = namedtuple('Contributor', ['name', 'email', 'role'])
-
-
-def findUser(name):
-    ## the following returns a dict w/ keys 'children' and 'totalNumberOfResults'
-    ## 'children' contains a list of headers with 'displayName', 'isIndividual',
-    ## 'ownerId' and a preview 'pic'
-    return syn.restGET('/userGroupHeaders?prefix=%s' % name)
+def _slugify(a, max_length=18):
+    """An over-simplified function to turn a string into a slug"""
+    return re.sub('-+$', '',
+            re.sub('-+', '-',
+             re.sub('\W', '-', a.lower()))[0:max_length])
 
 def _is_email(a):
     """Returns true if the string looks even vaguely like an email, false otherwise"""
     return bool(re.match("[^@]+@[^@]+\.[^@]+", a.strip()))
 
-def contributor_markdown(contributor):
-    def _name(contributor):
-        return contributor.get('displayName', contributor.get('name',''))
 
-    ## if given an email, look it up in synapse
-    if isinstance(contributor, basestring):
-        results = findUser(contributor)
-        if results['totalNumberOfResults'] > 0:
-            profile = syn.getUserProfile(results['children'][0]['ownerId'])
+class Scaffold(object):
+
+    def __init__(self, synapse):
+        self.syn = synapse
+
+
+    def _find_user(self, name):
+        ## the following returns a dict w/ keys 'children' and 'totalNumberOfResults'
+        ## 'children' contains a list of headers with 'displayName', 'isIndividual',
+        ## 'ownerId' and a preview 'pic'
+        return self.syn.restGET('/userGroupHeaders?prefix=%s' % name)
+
+
+    def _contributor_markdown(self, contributor):
+
+        ## helper function to flexibly get contributor's name
+        def _name(contributor):
+            return contributor.get('displayName', contributor.get('name',''))
+
+        ## if given an email, look it up in synapse
+        if isinstance(contributor, basestring):
+            results = self._find_user(contributor)
+            if results['totalNumberOfResults'] > 0:
+                profile = self.syn.getUserProfile(results['children'][0]['ownerId'])
+            else:
+                profile = {'name':contributor}
+        elif isinstance(contributor, int):
+            profile = self.syn.getUserProfile(contributor)
         else:
-            profile = {'name':contributor}
-    else:
-        profile = contributor
+            profile = contributor
 
-    ## profiles should have:
-    ## 'displayName' or 'name', 'company', 'position', 'ownerId', 'url'
+        ## profiles should have:
+        ## 'displayName' or 'name', 'company', 'position', 'ownerId', 'url'
 
-    fields = []
-    if 'ownerId' in profile:
-        fields.append("[%s](https://www.synapse.org/#!Profile:%s)" % (_name(profile), profile['ownerId']))
-    elif 'url' in profile:
-        fields.append("[%s](%s)" % (_name(profile), profile['url']))
-    else:
-        fields.append(_name(profile))
+        fields = []
+        if 'ownerId' in profile:
+            fields.append("[%s](https://www.synapse.org/#!Profile:%s)" % (_name(profile), profile['ownerId']))
+        elif 'url' in profile:
+            fields.append("[%s](%s)" % (_name(profile), profile['url']))
+        else:
+            fields.append(_name(profile))
 
-    if 'role' in profile:
-        fields.append(profile['role'])
-    elif 'position' in profile:
-        fields.append(profile['position'])
+        if 'role' in profile:
+            fields.append(profile['role'])
+        elif 'position' in profile:
+            fields.append(profile['position'])
 
-    return ' '.join(fields)
+        return ' '.join(fields)
 
-def team_markdown(team):
-    return '\n'.join(['* '+contributor_markdown(member) for member in team])
 
-def data_analysis_project(name, **kwargs):
-    """
-    """
-    project = syn.store(Project(name))
+    def _team_markdown(self, team):
+        return '\n'.join(['* '+self._contributor_markdown(member) for member in team])
 
-    data = syn.store(Folder('data', parent=project))
-    code = syn.store(Folder('src', parent=project))
-    figures = syn.store(Folder('figures', parent=project))
 
-    if 'team' not in kwargs:
-        team = [syn.getUserProfile(), 'Other team members?']
-    else:
-        team = kwargs['team']
+    def data_analysis(self, name, **kwargs):
+        """
+        Scaffold for a data analysis project
 
-    markdown = """
-    #%s
-    
-    This is a template for a data analysis project. It would be great to add
-    an overview and a bit of background to help readers understand the goals
-    and methods of the project.
+        :param name:         name your project
+        :param team:         list of emails, names or synapse user IDs
+        """
+        project = self.syn.store(Project(name))
 
-    ${image?synapseId=syn2280523&align=None&scale=100}
+        data = self.syn.store(Folder('data', parent=project))
+        code = self.syn.store(Folder('src', parent=project))
+        figures = self.syn.store(Folder('figures', parent=project))
 
-    ##Data
-    The structure and limitations of the data (%s).
+        if 'team' not in kwargs:
+            team = [self.syn.getUserProfile(), 'Add team members']
+        else:
+            team = kwargs['team']
 
-    ##Methods
-    Analysis workflow, techniques and source code (%s).
+        template = pkg_resources.resource_string('synapseclient', 'templates/data_analysis.md.template')
 
-    ##Results
-    Findings and figures (%s).
+        markdown = template.format(
+                    name=name,
+                    data_syn_id=data.id,
+                    name_slug=_slugify(name),
+                    code_syn_id=code.id,
+                    figures_syn_id=figures.id,
+                    team=self._team_markdown(team))
 
-    ##Team
-    %s
+        try:
+            wiki = self.syn.getWiki(owner=project)
+            wiki.name = name
+            wiki.owner = project
+            wiki.markdown = markdown
+        except SynapseHTTPError as ex:
+            wiki = Wiki(title=name,
+                        owner=project,
+                        markdown=markdown)
+        wiki = self.syn.store(wiki)
 
-    ##Links
-    To publications, organization, data providers, funders, etc.
+        entities = {}
+        for key, folder in (('data', data), ('code', code), ('figures', figures)):
+            entities[key] = []
+            if key in kwargs:
+                for filepath in _to_list(kwargs[key]):
+                    entities[key].append(
+                        self.syn.store(File(filepath, parent=folder)))
 
-    """ % (name, data.id, code.id, figures.id, team_markdown(team))
+        return project
 
-    wiki = syn.store(Wiki(
-        title=name,
-        owner=project,
-        markdown=markdown))
-
-    entities = {}
-    for key, folder in (('data', data), ('code', code), ('figures', figures)):
-        entities[key] = []
-        if key in kwargs:
-            for filepath in _to_list(kwargs[key]):
-                entities[key].append(
-                    syn.store(File(filepath, parent=folder)))
 
