@@ -37,6 +37,15 @@ class Scaffold(object):
         return self.syn.restGET('/userGroupHeaders?prefix=%s' % name)
 
 
+    def _create_or_update_wiki(self, owner, **kwargs):
+        try:
+            wiki = self.syn.getWiki(owner=owner)
+            wiki.update(kwargs)
+        except SynapseHTTPError as ex:
+            wiki = Wiki(owner=owner, **kwargs)
+        return self.syn.store(wiki)
+
+
     def _contributor_markdown(self, contributor):
 
         ## helper function to flexibly get contributor's name
@@ -106,16 +115,7 @@ class Scaffold(object):
                     figures_syn_id=figures.id,
                     team=self._team_markdown(team))
 
-        try:
-            wiki = self.syn.getWiki(owner=project)
-            wiki.name = name
-            wiki.owner = project
-            wiki.markdown = markdown
-        except SynapseHTTPError as ex:
-            wiki = Wiki(title=name,
-                        owner=project,
-                        markdown=markdown)
-        wiki = self.syn.store(wiki)
+        self._create_or_update_wiki(owner=project, title=name, markdown=markdown)
 
         entities = {}
         for key, folder in (('data', data), ('code', code), ('figures', figures)):
