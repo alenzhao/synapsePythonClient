@@ -17,7 +17,7 @@ syn.login()
 
 ###1. Add data
 
-Upload a data file to the [data folder](#!Synapse:syn1768504/wiki/56098):
+Store a data file to the [data folder](#!Synapse:syn1768504/wiki/56098):
 
 ```python
 data_entity = syn.store(File('data/file.xyz', parent='{data_syn_id}'))
@@ -35,20 +35,25 @@ Note that the URL above refers to a specific commit of the source code file `dat
 
 ###3. Add figures
 
-Upload a figure recording the data and source code used to derive it.
+Upload a figure recording the data and source code used to derive it:
 
 ```python
 activity = Activity(name='DataNinjaMethod', used=data_entity, executed=code_entity)
 figure_entity = syn.store(File('figures/figure1.pdf', parent='{figures_syn_id}'), activity=activity)
 ```
-`Activity` objects are part of the W3C provenance specification. For more on creating reproducible data analyses using provenance, see: [Building up provenance relationships](#!Synapse:syn1768504/wiki/56099).
+[Activity](http://python-docs.synapse.org/_static/Activity.html) objects are part of the W3C provenance specification. For more on creating reproducible data analyses using provenance, see: [Building up provenance relationships](#!Synapse:syn1768504/wiki/56099).
 
 ###4. Share your project with the world.
 
-Your project is currently visible only through your account. Let specific individuals or the public join in.
+Your project is currently visible only through your account. Let specific individuals or the public join in:
+
 ```python
 syn.setPermissions(project, synapseclient.PUBLIC, accessType=['READ', 'DOWNLOAD'])
 ```
+
+##Other resources
+* [Getting started with the Python client for Synapse](#!Synapse:syn1768504)
+* [Python Synapse Client API docs](http://python-docs.synapse.org/)
 
 ##Team
 {team}
