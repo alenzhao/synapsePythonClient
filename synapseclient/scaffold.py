@@ -38,11 +38,13 @@ class Scaffold(object):
 
 
     def _create_or_update_wiki(self, owner, **kwargs):
-        try:
-            wiki = self.syn.getWiki(owner=owner)
-            wiki.update(kwargs)
-        except SynapseHTTPError as ex:
-            wiki = Wiki(owner=owner, **kwargs)
+        if 'title' in kwargs:
+            for header in self.syn.getWikiHeaders(owner=owner):
+                if kwargs['title']==header.title:
+                    wiki = self.syn.getWiki(owner=owner, subpageId=header.id)
+                    wiki.update(kwargs)
+                    return self.syn.store(wiki)
+        wiki = Wiki(owner=owner, **kwargs)
         return self.syn.store(wiki)
 
 
@@ -115,7 +117,19 @@ class Scaffold(object):
                     figures_syn_id=figures.id,
                     team=self._team_markdown(team))
 
-        self._create_or_update_wiki(owner=project, title=name, markdown=markdown)
+        wiki_top = self._create_or_update_wiki(owner=project, title=name, markdown=markdown)
+
+        template = pkg_resources.resource_string('synapseclient', 'templates/data.md.template')
+        markdown = template.format(data_syn_id=data.id)
+        wiki_data = self._create_or_update_wiki(owner=project, title='Data', parentWikiId=wiki_top.id, markdown=markdown)
+
+        template = pkg_resources.resource_string('synapseclient', 'templates/methods.md.template')
+        markdown = template.format(code_syn_id=code.id)
+        wiki_methods = self._create_or_update_wiki(owner=project, title='Methods', parentWikiId=wiki_top.id, markdown=markdown)
+
+        template = pkg_resources.resource_string('synapseclient', 'templates/results.md.template')
+        markdown = template.format(figures_syn_id=figures.id)
+        wiki_results = self._create_or_update_wiki(owner=project, title='Results', parentWikiId=wiki_top.id, markdown=markdown)
 
         entities = {}
         for key, folder in (('data', data), ('code', code), ('figures', figures)):

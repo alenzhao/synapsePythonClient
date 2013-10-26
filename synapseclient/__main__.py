@@ -240,11 +240,17 @@ def new(args, syn):
     from synapseclient.scaffold import Scaffold
     scaffold = Scaffold(syn)
     if args.scaffold == 'data analysis':
-        scaffold.data_analysis(name=args.name, team=args.team)
+        project = scaffold.data_analysis(name=args.name, team=args.team)
     elif args.scaffold == 'challenge':
-        scaffold.challenge(name=args.name)
+        project = scaffold.challenge(name=args.name)
     else:
         raise ValueError('Unrecognized scaffold "%s".' % args.scaffold)
+
+    print 'Created %s project: %s\t%s\n' %(args.scaffold, project.id, project.name)
+
+    if args.onweb:
+        syn.onweb(project.id)
+
 
 
 def build_parser():
@@ -560,6 +566,10 @@ def build_parser():
             '-t', '--team',
             metavar='TEAM', type=str, nargs='*',
             help='List of names or emails of team members')
+    parser_new.add_argument(
+            '--onweb',
+            action='store_true', default=False,
+            help='Show the new project in a browser')
 
     parser_new.set_defaults(func=new)
 

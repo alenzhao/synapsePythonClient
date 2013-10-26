@@ -95,11 +95,12 @@ class Wiki(DictObject):
     """
     Represents a wiki page in Synapse with content specified in markdown.
     
-    :param title:       Title of the Wiki
-    :param owner:       Parent Entity that the Wiki will belong to
-    :param markdown:    Content of the Wiki
-    :param attachments: List of paths to files to attach
-    :param fileHandles: List of file handle IDs representing files to be attached
+    :param title:         Title of the Wiki
+    :param owner:         Parent Entity that the Wiki will belong to
+    :param markdown:      Content of the Wiki
+    :param attachments:   List of paths to files to attach
+    :param fileHandles:   List of file handle IDs representing files to be attached
+    :param parentWikiId:  Makes this wiki a child page of another wiki
     """
     
     __PROPERTIES = ('title', 'markdown', 'attachmentFileHandleIds', 'id', 'etag', 'createdBy', 'createdOn', 'modifiedBy', 'modifiedOn', 'parentWikiId')

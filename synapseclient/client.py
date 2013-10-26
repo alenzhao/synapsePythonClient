@@ -43,6 +43,7 @@ import synapseclient.utils as utils
 import synapseclient.cache as cache
 import synapseclient.exceptions as exceptions
 from synapseclient.exceptions import *
+from synapseclient.dict_object import DictObject
 from synapseclient.version_check import version_check
 from synapseclient.utils import id_of, get_properties, KB, MB
 from synapseclient.annotations import from_synapse_annotations, to_synapse_annotations
@@ -2220,9 +2221,9 @@ class Synapse:
              'totalNumberOfResults': 3}
 
         """
-        
+
         uri = '/entity/%s/wikiheadertree' % id_of(owner)
-        return self.restGET(uri)
+        return [DictObject(**header) for header in self.restGET(uri)['results']]
 
     
     def _storeWiki(self, wiki):
