@@ -2210,15 +2210,7 @@ class Synapse:
         
         :param owner: An Evaluation or Entity
         
-        :returns: A dictionary with the following format:
-
-        .. code-block:: python
-
-            {'results': [
-                {'id': '100', 'title': 'Root'},
-                {'id': '102', 'parentId': '100', 'title': 'Child wiki page 1'},
-                {'id': '103', 'parentId': '100', 'title': 'Child wiki page 2'}],
-             'totalNumberOfResults': 3}
+        :returns: A list of Objects with three fields: id, title and parentId.
 
         """
 
