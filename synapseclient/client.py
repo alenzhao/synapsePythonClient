@@ -1887,21 +1887,35 @@ class Synapse:
                     i += 1
                     chunk_record = {'chunk-number':i}
 
+                    ## this is defined here to capture the params from the local namespace
                     def put_chunk():
                         # Get the signed S3 URL
                         url = self._createChunkedFileUploadChunkURL(i, token)
                         chunk_record['url'] = url
-                        if progress:
-                            sys.stdout.write('.')
-                            sys.stdout.flush()
-                        return requests.put(url, data=chunk, headers=headers)
+                        try:
+                            response = requests.put(url, data=chunk, headers=headers)
+                        finally:
+                            # Is requests closing response stream? Let's make sure:
+                            # "Note that connections are only released back to
+                            #  the pool for reuse once all body data has been
+                            #  read; be sure to either set stream to False or
+                            #  read the content property of the Response object."
+                            # see: http://docs.python-requests.org/en/latest/user/advanced/#keep-alive
+                            try:
+                                if 'response' in locals() and response is not None:
+                                    throw_away = response.content
+                            except Exception as ex:
+                                warnings.warn('error reading response: '+str(ex))
+
+                        if response.status_code >= 400:
+                            print "chunk=", i
+                            print "headers=", headers
+                            print response.text
+
+                        return response
 
                     # PUT the chunk to S3
-                    response = _with_retry(put_chunk, **retry_policy)
-
-                    if progress:
-                        sys.stdout.write(',')
-                        sys.stdout.flush()
+                    response = _with_retry(put_chunk, verbose=True, **retry_policy)
 
                     chunk_record['response-status-code'] = response.status_code
                     chunk_record['response-headers'] = response.headers
@@ -1909,17 +1923,9 @@ class Synapse:
                         chunk_record['response-body'] = response.text
                     diagnostics['chunks'].append(chunk_record)
 
-                    # Is requests closing response stream? Let's make sure:
-                    # "Note that connections are only released back to
-                    #  the pool for reuse once all body data has been
-                    #  read; be sure to either set stream to False or
-                    #  read the content property of the Response object."
-                    # see: http://docs.python-requests.org/en/latest/user/advanced/#keep-alive
-                    try:
-                        if response:
-                            throw_away = response.content
-                    except Exception as ex:
-                        sys.stderr.write('error reading response: '+str(ex))
+                    if progress:
+                        sys.stdout.write('.')
+                        sys.stdout.flush()
 
                     exceptions._raise_for_status(response, verbose=self.debug)
 
@@ -1939,7 +1945,7 @@ class Synapse:
                 # Poll until concatenating chunks is complete
                 while (status['state']=='PROCESSING'):
                     if progress:
-                        sys.stdout.write('.')
+                        sys.stdout.write(',')
                         sys.stdout.flush()
                     time.sleep(CHUNK_UPLOAD_POLL_INTERVAL)
                     status = self._completeUploadDaemonStatus(status)
