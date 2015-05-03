@@ -67,15 +67,15 @@ def main():
     parser.add_argument('-s', '--skip-checks', dest='skip_checks', action='store_true',
             help='suppress checking for version upgrade messages and endpoint redirection')
 
-    parser.add_argument('-size-megabytes', type=int, dest='size_megabytes')
-    parser.add_argument('-size-gigabytes', type=int, dest='size_gigabytes')
+    parser.add_argument('--size-mb', type=int, dest='size_mb')
+    parser.add_argument('--size-gb', type=int, dest='size_gb')
 
     args = parser.parse_args()
 
-    if args.size_megabytes:
-        args.file_to_upload_size = args.size_megabytes * utils.MB
-    elif args.size_gigabytes:
-        args.file_to_upload_size = args.size_gigabytes * utils.GB
+    if args.size_mb:
+        args.file_to_upload_size = args.size_mb * utils.MB
+    elif args.size_gb:
+        args.file_to_upload_size = args.size_gb * utils.GB
     else:
         args.file_to_upload_size = 11*utils.KB
 
