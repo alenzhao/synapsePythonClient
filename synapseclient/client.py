@@ -1827,6 +1827,8 @@ class Synapse:
         :returns: An `S3 FileHandle <http://rest.synapse.org/org/sagebionetworks/repo/model/file/S3FileHandle.html>`_
         """
 
+        print "\n\n\naaaaaaaaaaaaa\n\n\n"
+
         if chunksize < 5*MB:
             raise ValueError('Minimum chunksize is 5 MB.')
         if filepath is None or not os.path.exists(filepath):
@@ -1850,7 +1852,7 @@ class Synapse:
         # If you give S3 'transfer-encoding' and no 'content-length', you get:
         #   501 Server Error: Not Implemented
         #   A header you provided implies functionality that is not implemented
-        headers = { 'Content-Type' : mimetype, 'Accept':'application/json' }
+        headers = { 'Content-Type' : mimetype }
         headers.update(synapseclient.USER_AGENT)
 
         diagnostics['mimetype'] = mimetype
@@ -1873,11 +1875,14 @@ class Synapse:
                     'Please slow down',
                     'Slowdown',
                     'We encountered an internal error. Please try again.',
-                    'Max retries exceeded with url'],
+                    'Max retries exceeded with url',
+                    'RequestTimeout'],
                 "retry_exceptions"  : ['ConnectionError', 'Timeout', 'timeout'],
                 "retries"           : 6,
                 "wait"              : 1,
                 "back_off"          : 2})
+
+            ## RequestTimeout comes from S3 during put operations
 
             diagnostics['chunks'] = []
 
