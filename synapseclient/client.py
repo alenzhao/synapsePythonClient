@@ -1956,7 +1956,7 @@ class Synapse:
                     break
 
                 else:
-                    warning.warn("Attempt to complete upload failed: " + status['errorMessage'])
+                    warnings.warn("Attempt to complete upload failed: " + status['errorMessage'])
                     time.sleep(sleep_on_failed_time)
                     sleep_on_failed_time *= backoff_multiplier
 
