@@ -1892,6 +1892,7 @@ class Synapse:
                         # Get the signed S3 URL
                         url = self._createChunkedFileUploadChunkURL(i, token)
                         chunk_record['url'] = url
+                        print url
                         try:
                             response = requests.put(url, data=chunk, headers=headers)
                         finally:
