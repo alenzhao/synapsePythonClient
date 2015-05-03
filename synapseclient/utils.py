@@ -363,7 +363,7 @@ def make_bogus_data_file(n=100, seed=None):
     return f.name
 
 
-def make_bogus_binary_file(n=1*MB):
+def make_bogus_binary_file(n=1*MB, printprogress=False):
     """
     Makes a bogus binary data file for testing.
     It is the caller's responsibility to clean up the file when finished.
@@ -373,11 +373,16 @@ def make_bogus_binary_file(n=1*MB):
     :returns: The name of the file
     """
 
-    junk = os.urandom(min(n, 1*MB))
+    progress = 0
+    remaining = n
     with tempfile.NamedTemporaryFile(mode='wb', suffix=".dat", delete=False) as f:
-        while n > 0:
-            f.write(junk[0:min(n, 1*MB)])
-            n -= min(n, 1*MB)
+        while remaining > 0:
+            buff_size = min(remaining, 1*MB)
+            f.write(os.urandom(buff_size))
+            remaining -= buff_size
+            if printprogress:
+                progress += buff_size
+                printTransferProgress(progress, n, 'Generated ', f.name)
     return f.name
 
 

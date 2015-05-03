@@ -25,8 +25,8 @@ def test_large_file_upload(file_to_upload_size=11*utils.KB):
     try:
         project = syn.store(Project("File Upload Load Test " +  datetime.now().strftime("%Y-%m-%d %H%M%S%f")))
 
-        filepath = utils.make_bogus_binary_file(file_to_upload_size)
-        print 'Made bogus file: ', filepath
+        filepath = utils.make_bogus_binary_file(file_to_upload_size, printprogress=True)
+        print 'Made bogus file: ', filepath, 'FileHandle:'
 
         try:
             junk = syn.store(File(filepath, parent=project))
@@ -46,8 +46,6 @@ def test_large_file_upload(file_to_upload_size=11*utils.KB):
                 os.remove(filepath)
         except Exception:
             print traceback.format_exc()
-
-
 
 
 def main():

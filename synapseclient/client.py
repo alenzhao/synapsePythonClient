@@ -1850,7 +1850,7 @@ class Synapse:
         # If you give S3 'transfer-encoding' and no 'content-length', you get:
         #   501 Server Error: Not Implemented
         #   A header you provided implies functionality that is not implemented
-        headers = { 'Content-Type' : mimetype }
+        headers = { 'Content-Type' : mimetype, 'Accept':'application/json' }
         headers.update(synapseclient.USER_AGENT)
 
         diagnostics['mimetype'] = mimetype
@@ -1910,7 +1910,11 @@ class Synapse:
 
                         if response.status_code >= 400:
                             print "chunk=", i
-                            print "headers=", headers
+                            print "length of chunk", len(chunk)
+                            try:
+                                print "headers=", response.request.headers
+                            except:
+                                print "??headers=", headers
                             print response.text
 
                         return response
@@ -1928,7 +1932,7 @@ class Synapse:
                         sys.stdout.write('.')
                         sys.stdout.flush()
 
-                    exceptions._raise_for_status(response, verbose=self.debug)
+                    exceptions._raise_for_status(response, verbose=True)
 
             ## complete the upload
             sleep_on_failed_time = 1
