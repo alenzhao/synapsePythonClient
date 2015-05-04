@@ -1827,7 +1827,7 @@ class Synapse:
         :returns: An `S3 FileHandle <http://rest.synapse.org/org/sagebionetworks/repo/model/file/S3FileHandle.html>`_
         """
 
-        print "\n\n\naaaaaaaaaaaaa\n\n\n"
+        print "\n\n\nSunday 10:34 pm, May 3\n\n\n"
 
         if chunksize < 5*MB:
             raise ValueError('Minimum chunksize is 5 MB.')
@@ -1898,20 +1898,20 @@ class Synapse:
                         url = self._createChunkedFileUploadChunkURL(i, token)
                         chunk_record['url'] = url
                         print url
+
+                        response = requests.put(url, data=chunk, headers=headers)
+
+                        # Is requests closing response stream? Let's make sure:
+                        # "Note that connections are only released back to
+                        #  the pool for reuse once all body data has been
+                        #  read; be sure to either set stream to False or
+                        #  read the content property of the Response object."
+                        # see: http://docs.python-requests.org/en/latest/user/advanced/#keep-alive
                         try:
-                            response = requests.put(url, data=chunk, headers=headers)
-                        finally:
-                            # Is requests closing response stream? Let's make sure:
-                            # "Note that connections are only released back to
-                            #  the pool for reuse once all body data has been
-                            #  read; be sure to either set stream to False or
-                            #  read the content property of the Response object."
-                            # see: http://docs.python-requests.org/en/latest/user/advanced/#keep-alive
-                            try:
-                                if 'response' in locals() and response is not None:
-                                    throw_away = response.content
-                            except Exception as ex:
-                                warnings.warn('error reading response: '+str(ex))
+                            if 'response' in locals() and response is not None:
+                                throw_away = response.content
+                        except Exception as ex:
+                            warnings.warn('error reading response: '+str(ex))
 
                         if response.status_code >= 400:
                             print "chunk=", i
