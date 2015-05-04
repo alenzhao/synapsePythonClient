@@ -1827,7 +1827,7 @@ class Synapse:
         :returns: An `S3 FileHandle <http://rest.synapse.org/org/sagebionetworks/repo/model/file/S3FileHandle.html>`_
         """
 
-        print "\n\n\nSunday 10:34 pm, May 3\n\n\n"
+        print "\n\n\nMonday 6:57 am, May 4\n\n\n"
 
         if chunksize < 5*MB:
             raise ValueError('Minimum chunksize is 5 MB.')
@@ -1884,6 +1884,8 @@ class Synapse:
 
             ## RequestTimeout comes from S3 during put operations
 
+            from datetime import datetime
+
             diagnostics['chunks'] = []
 
             i = 0
@@ -1899,6 +1901,8 @@ class Synapse:
                         chunk_record['url'] = url
                         print url
 
+                        ## if we're retrying, we want to reset the chunk to start at the beginning
+                        chunk.seek(0)
                         response = requests.put(url, data=chunk, headers=headers)
 
                         # Is requests closing response stream? Let's make sure:
@@ -1915,6 +1919,7 @@ class Synapse:
 
                         if response.status_code >= 400:
                             print "chunk=", i
+                            print datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
                             print "length of chunk", len(chunk)
                             try:
                                 print "headers=", response.request.headers

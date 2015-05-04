@@ -4,7 +4,8 @@ import tempfile
 import os
 import hashlib
 
-KB = 2**10
+from synapseclient.utils import GB, MB, KB
+
 
 def setup():
     print '\n'
@@ -16,9 +17,9 @@ def setup():
 def test_chunks():
     # Read a file in chunks, write the chunks out, and compare to the original
     try:
-        filepath = utils.make_bogus_binary_file()
+        filepath = utils.make_bogus_binary_file(n=1*MB)
         with open(filepath, 'rb') as f, tempfile.NamedTemporaryFile(mode='wb', delete=False) as out:
-            for chunk in utils.chunks(f):
+            for chunk in utils.chunks(f, 16*1024):
                 buff = chunk.read(4*KB)
                 while buff:
                     out.write(buff)
@@ -31,7 +32,41 @@ def test_chunks():
             os.remove(out.name)
 
 
-def manual_test_chunks_big(size=3*utils.MB, chunksize=1*utils.MB):
+def test_seek():
+    try:
+        filepath = utils.make_bogus_data_file(n=1000)
+        with open(filepath, 'rb') as f, tempfile.NamedTemporaryFile(mode='wb', delete=False) as out:
+            for chunk in utils.chunks(f, 16*1024):
+                buff = chunk.read(4*KB)
+                chunk.seek(0,2)
+                assert chunk.tell() == chunk.size
+
+                chunk.seek(1234)
+                assert chunk.tell() == 1234
+
+                buff = chunk.read(4*KB)
+                assert chunk.tell() == 1234 + 4*KB
+
+                buff = chunk.read(4*KB)
+                assert chunk.tell() == 1234 + 8*KB
+
+                chunk.seek(0)
+                assert chunk.tell() == 0
+
+                buff = chunk.read(4*KB)
+                while buff:
+                    out.write(buff)
+                    buff = chunk.read(4*KB)
+        assert filecmp.cmp(filepath, out.name)
+
+    finally:
+        if 'filepath' in locals() and filepath:
+            os.remove(filepath)
+        if 'out' in locals() and out:
+            os.remove(out.name)
+
+
+def manualtest_chunks_big(size=3*utils.MB, chunksize=1*utils.MB):
     # Read a file in chunks, write the chunks out, and compare to the original
     try:
         filepath = utils.make_bogus_binary_file(size, printprogress=True)

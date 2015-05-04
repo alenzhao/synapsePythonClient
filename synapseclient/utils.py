@@ -470,6 +470,23 @@ class Chunk(object):
         self.position += size
         return self.fileobj.read(size)
 
+    def seek(self, offset, from_what=0):
+        """
+        0  beginning of file
+        1  current file position
+        2  end of file
+        """
+        if from_what==0:
+            self.position = offset
+        elif from_what==1:
+            self.position += offset
+        elif from_what==2:
+            self.position = self.size + offset
+        self.fileobj.seek(offset, from_what)
+
+    def tell(self):
+        return self.position
+
     def mode(self):
         return self.fileobj.mode()
 
