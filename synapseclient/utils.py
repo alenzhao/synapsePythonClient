@@ -49,7 +49,7 @@ Testing
 #!/usr/bin/env python2.7
 
 import cgi
-import os, sys, urllib, urlparse, hashlib, re
+import math, os, sys, urllib, urlparse, hashlib, re
 import random
 import requests
 import collections
@@ -444,80 +444,21 @@ def _find_used(activity, predicate):
     return None
 
 
-class Chunk(object):
+def nchunks(filepath, chunksize=5*MB):
     """
-    A file-like object representing a fixed-size part of a larger file for use
-    during chunked file uploading.
+    Computes how many chunks are necessary to upload the given file.
     """
-
-    ## TODO: implement seek and tell?
-
-    def __init__(self, fileobj, size):
-        self.fileobj = fileobj
-        self.size = size
-        self.position = 0
-        self.closed = False
-
-    def read(self, size=None):
-        if size is None or size <= 0:
-            size = self.size - self.position
-        else:
-            size = min(size, self.size - self.position)
-
-        if self.closed or size <=0:
-            return None
-
-        self.position += size
-        return self.fileobj.read(size)
-
-    def seek(self, offset, from_what=0):
-        """
-        0  beginning of file
-        1  current file position
-        2  end of file
-        """
-        if from_what==0:
-            self.position = offset
-        elif from_what==1:
-            self.position += offset
-        elif from_what==2:
-            self.position = self.size + offset
-        self.fileobj.seek(offset, from_what)
-
-    def tell(self):
-        return self.position
-
-    def mode(self):
-        return self.fileobj.mode()
-
-    def __len__(self):
-        return self.size
-
-    def __iter__(self):
-        return self
-
-    def next(self):
-        if self.closed:
-            raise StopIteration
-        data = self.read(BUFFER_SIZE)
-        if not data:
-           raise StopIteration
-        return data
-
-    def close(self):
-        self.closed = True
+    size = os.stat(filepath).st_size
+    return int(math.ceil( float(size) / chunksize))
 
 
-def chunks(fileobj, chunksize=5*MB):
+def get_chunk(filepath, chunknumber, chunksize=5*MB):
     """
-    Given a file, generate `Chunk` objects from which `chunksize` bytes can be streamed.
-    for use during chunked file uploading."""
-
-    remaining = os.stat(fileobj.name).st_size
-    while remaining > 0:
-        chunk = Chunk(fileobj, size=min(remaining, chunksize))
-        remaining -= len(chunk)
-        yield chunk
+    Read a requested chunk number from the file path. Use with :py:func:`nchunks`.
+    """
+    with open(filepath, 'rb') as f:
+        f.seek((chunknumber-1)*chunksize)
+        return f.read(chunksize)
 
 
 def itersubclasses(cls, _seen=None):

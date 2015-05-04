@@ -47,7 +47,7 @@ import synapseclient.cache as cache
 import synapseclient.exceptions as exceptions
 from synapseclient.exceptions import *
 from synapseclient.version_check import version_check
-from synapseclient.utils import id_of, get_properties, KB, MB, _is_json
+from synapseclient.utils import id_of, get_properties, KB, MB, _is_json, nchunks, get_chunk
 from synapseclient.annotations import from_synapse_annotations, to_synapse_annotations
 from synapseclient.annotations import to_submission_status_annotations, from_submission_status_annotations
 from synapseclient.activity import Activity
@@ -1888,61 +1888,58 @@ class Synapse:
 
             diagnostics['chunks'] = []
 
-            i = 0
-            with open(filepath, 'rb') as f:
-                for chunk in utils.chunks(f, chunksize):
-                    i += 1
-                    chunk_record = {'chunk-number':i}
+            for i in range(1, nchunks(filepath, chunksize=64*1024)+1):
+                chunk = get_chunk(filepath, i, chunksize=64*1024)
 
-                    ## this is defined here to capture the params from the local namespace
-                    def put_chunk():
-                        # Get the signed S3 URL
-                        url = self._createChunkedFileUploadChunkURL(i, token)
-                        chunk_record['url'] = url
-                        print url
+                chunk_record = {'chunk-number':i}
 
-                        ## if we're retrying, we want to reset the chunk to start at the beginning
-                        chunk.seek(0)
-                        response = requests.put(url, data=chunk, headers=headers)
+                ## this is defined here to capture the params from the local namespace
+                def put_chunk():
+                    # Get the signed S3 URL
+                    url = self._createChunkedFileUploadChunkURL(i, token)
+                    chunk_record['url'] = url
+                    print url
 
-                        # Is requests closing response stream? Let's make sure:
-                        # "Note that connections are only released back to
-                        #  the pool for reuse once all body data has been
-                        #  read; be sure to either set stream to False or
-                        #  read the content property of the Response object."
-                        # see: http://docs.python-requests.org/en/latest/user/advanced/#keep-alive
+                    response = requests.put(url, data=chunk, headers=headers)
+
+                    # Is requests closing response stream? Let's make sure:
+                    # "Note that connections are only released back to
+                    #  the pool for reuse once all body data has been
+                    #  read; be sure to either set stream to False or
+                    #  read the content property of the Response object."
+                    # see: http://docs.python-requests.org/en/latest/user/advanced/#keep-alive
+                    try:
+                        if 'response' in locals() and response is not None:
+                            throw_away = response.content
+                    except Exception as ex:
+                        warnings.warn('error reading response: '+str(ex))
+
+                    if response.status_code >= 400:
+                        print "chunk=", i
+                        print datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
+                        print "length of chunk", len(chunk)
                         try:
-                            if 'response' in locals() and response is not None:
-                                throw_away = response.content
-                        except Exception as ex:
-                            warnings.warn('error reading response: '+str(ex))
+                            print "headers=", response.request.headers
+                        except:
+                            print "??headers=", headers
+                        print response.text
 
-                        if response.status_code >= 400:
-                            print "chunk=", i
-                            print datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
-                            print "length of chunk", len(chunk)
-                            try:
-                                print "headers=", response.request.headers
-                            except:
-                                print "??headers=", headers
-                            print response.text
+                    return response
 
-                        return response
+                # PUT the chunk to S3
+                response = _with_retry(put_chunk, verbose=True, **retry_policy)
 
-                    # PUT the chunk to S3
-                    response = _with_retry(put_chunk, verbose=True, **retry_policy)
+                chunk_record['response-status-code'] = response.status_code
+                chunk_record['response-headers'] = response.headers
+                if response.text:
+                    chunk_record['response-body'] = response.text
+                diagnostics['chunks'].append(chunk_record)
 
-                    chunk_record['response-status-code'] = response.status_code
-                    chunk_record['response-headers'] = response.headers
-                    if response.text:
-                        chunk_record['response-body'] = response.text
-                    diagnostics['chunks'].append(chunk_record)
+                if progress:
+                    sys.stdout.write('.')
+                    sys.stdout.flush()
 
-                    if progress:
-                        sys.stdout.write('.')
-                        sys.stdout.flush()
-
-                    exceptions._raise_for_status(response, verbose=True)
+                exceptions._raise_for_status(response, verbose=True)
 
             ## complete the upload
             sleep_on_failed_time = 1
