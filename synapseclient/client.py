@@ -1827,8 +1827,6 @@ class Synapse:
         :returns: An `S3 FileHandle <http://rest.synapse.org/org/sagebionetworks/repo/model/file/S3FileHandle.html>`_
         """
 
-        print "\n\n\nMonday 6:57 am, May 4\n\n\n"
-
         if chunksize < 5*MB:
             raise ValueError('Minimum chunksize is 5 MB.')
         if filepath is None or not os.path.exists(filepath):

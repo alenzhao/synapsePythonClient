@@ -51,6 +51,10 @@ def test_large_file_upload(file_to_upload_size=11*utils.KB, filepath=None):
 
 def main():
 
+
+    print "\n\n\ntest_large_file_upload   -   Monday 4:25 pm, May 4\n\n\n"
+
+
     global syn
 
     parser = argparse.ArgumentParser(description='Tests uploading large files to Synapse.')
