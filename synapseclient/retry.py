@@ -1,3 +1,4 @@
+import random
 import sys
 import time
 
@@ -82,7 +83,7 @@ def _with_retry(function, verbose=False, \
         if retries >= 0 and retry:
             if verbose:
                 sys.stderr.write('\n... Retrying in %d seconds...\n' % wait)
-            time.sleep(wait)
+            time.sleep(wait*random.uniform(0.5,1.5))
             wait = min(max_wait, wait*back_off)
             continue
 
