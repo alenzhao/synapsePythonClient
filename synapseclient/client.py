@@ -86,14 +86,15 @@ DEBUG_DEFAULT = False
 # Defines the standard retry policy applied to the rest methods
 ## The retry period needs to span a minute because sending
 ## messages is limited to 10 per 60 seconds.
-STANDARD_RETRY_PARAMS = {"retry_status_codes": [502,503,504,429],
+STANDARD_RETRY_PARAMS = {"retry_status_codes": [429, 502,503,504],
                          "retry_errors"      : ["proxy error", "slow down", "timeout", "timed out",
                                                 "connection reset by peer", "unknown ssl protocol error",
                                                 "couldn't connect to host", "slowdown", "try again"],
                          "retry_exceptions"  : ["ConnectionError", "Timeout", "timeout"],
                          "retries"           : 8,
                          "wait"              : 1,
-                         "back_off"          : 2}
+                         "back_off"          : 2,
+                         "verbose"           : True}
 
 # Add additional mimetypes
 mimetypes.add_type('text/x-r', '.R', strict=False)
