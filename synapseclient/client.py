@@ -206,6 +206,8 @@ class Synapse:
         self.table_query_max_sleep = 20
         self.table_query_timeout = 300
 
+        print synapseclient.__version__, "wtf?"
+
 
 
     def getConfigFile(self, configPath):
