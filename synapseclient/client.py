@@ -1702,7 +1702,8 @@ class Synapse:
         #The assumption is wrong - we always try to read either the outer or inner requests.get
         #but sometimes we don't have something to read.  I.e. when the type is ftp at which point
         #we still set the cache and filepath based on destination which is wrong because nothing was fetched
-        response = requests.get(url, headers=self._generateSignedHeaders(url), allow_redirects=False)
+        ##response = requests.get(url, headers=self._generateSignedHeaders(url), allow_redirects=False)
+        response = _with_retry(lambda: requests.get(url, headers=self._generateSignedHeaders(url), allow_redirects=False), **retryPolicy)
         if response.status_code in [301,302,303,307,308]:
             url = response.headers['location']
             scheme = urlparse.urlparse(url).scheme

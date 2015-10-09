@@ -81,9 +81,10 @@ def _with_retry(function, verbose=False, \
         # Wait then retry
         retries -= 1
         if retries >= 0 and retry:
+            randomized_wait = wait*random.uniform(0.5,1.5)
             if verbose:
-                sys.stderr.write('\n... Retrying in %d seconds...\n' % wait)
-            time.sleep(wait*random.uniform(0.5,1.5))
+                sys.stderr.write('\n... wait=%d, Retrying in %0.1f seconds...\n' % (wait,randomized_wait))
+            time.sleep(randomized_wait)
             wait = min(max_wait, wait*back_off)
             continue
 
